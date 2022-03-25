@@ -14,7 +14,13 @@
 /*
  * Put your function declarations and data types here ...
  */
+// file descriptor
+struct fd {
+    off_t fp;
+    struct vnode *vptr;
+};
 
+int sys_open(char *filename, int flags, mode_t mode);
 
 
 #endif /* _FILE_H_ */

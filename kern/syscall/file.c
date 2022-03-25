@@ -19,3 +19,8 @@
  * Add your file-related functions here ...
  */
 
+int sys_open(userptr_t filename, int flags, mode_t mode) {
+    // vfs_open();
+    kprintf("%s, %d, %d", filename, flags, mode);
+    return -1;
+}

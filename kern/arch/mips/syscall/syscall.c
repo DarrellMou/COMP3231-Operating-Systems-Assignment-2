@@ -35,6 +35,7 @@
 #include <thread.h>
 #include <current.h>
 #include <syscall.h>
+#include <file.h>
 
 
 /*
@@ -115,6 +116,10 @@ syscall(struct trapframe *tf)
                 panic("Can't continue further until sys_exit() is implemented");
 
 	    /* Add stuff here */
+		case SYS_open: //  = 45
+		retval = sys_open((userptr_t)tf->tf_a0, (int)tf->tf_a1, 
+				 (mode_t)tf->tf_a2);
+		break;
 
 	    default:
 		kprintf("Unknown syscall %d\n", callno);
