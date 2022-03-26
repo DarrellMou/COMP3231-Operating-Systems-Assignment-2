@@ -117,14 +117,39 @@ syscall(struct trapframe *tf)
                 panic("Can't continue further until sys_exit() is implemented");
 
 	    /* Add stuff here */
-		case SYS_open: // = 45
+		case SYS_open:  // = 45
 		retval = sys_open((const_userptr_t)tf->tf_a0, (int)tf->tf_a1,
 					(mode_t)tf->tf_a2);
 		break;
 
+		// case SYS_read:  // = 50
+		// retval = sys_read((int)tf->tf_a0, (void *)tf->tf_a1,
+		// 			(size_t)tf->tf_a2);
+		// break
+
+		// case SYS_write: // = 55
+		// retval = sys_write((int)tf->tf_a0, (void *)tf->tf_a1, 
+		// 			(size_t)tf->tf_a2);
+		// break
+
+		// case SYS_lseek: // = 59
+		// uint64_t offset;
+		// int whence;
+		// off_t retval64;
+
+		// join32to64(tf->tf_a2, tf->tf_a3, &offset);
+		// copyin((userptr_t)tf->tf_sp + 16, &whence, sizeof(int));
+		// split64to32(retval64, &tf->tf_v0, &tf->tf_v1);
+		// retval = sys_lseek((int)tf->tf_a0, (off_t)offset, whence);
+		// break
+
 		case SYS_close: // = 49
 		retval = sys_close((int)tf->tf_a0);
 		break;
+
+		// case SYS_dup2:  // = 48
+		// retval = sys_dup2((int)tf->tf_a0, (int)tf->tf_a1);
+		// break
 
 	    default:
 		kprintf("Unknown syscall %d\n", callno);
