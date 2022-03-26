@@ -72,7 +72,7 @@ struct proc {
 	struct vnode *p_cwd;		/* current working directory */
 
 	/* add more material here as needed */
-	struct fd *ptr[OPEN_MAX];
+	struct fd *ofptrs[OPEN_MAX];
 };
 
 /* This is the process structure for the kernel and for kernel-only threads. */

@@ -20,7 +20,7 @@ struct fd {
     struct vnode *vptr;
 };
 
-int sys_open(char *filename, int flags, mode_t mode);
+int sys_open(const_userptr_t filenameoff_t, int flags, mode_t mode);
 
 
 #endif /* _FILE_H_ */

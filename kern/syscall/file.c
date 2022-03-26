@@ -19,8 +19,33 @@
  * Add your file-related functions here ...
  */
 
-int sys_open(userptr_t filename, int flags, mode_t mode) {
-    // vfs_open();
-    kprintf("%s, %d, %d", filename, flags, mode);
-    return -1;
+int sys_open(const_userptr_t filenameoff_t, int flags, mode_t mode) {
+    char filename[NAME_MAX];
+    size_t filesize;
+    int res;
+    copyinstr(filenameoff_t, filename, NAME_MAX, &filesize);
+
+    int fd;
+    for (fd = 3; fd < OPEN_MAX; fd++) {
+        if (curproc->ofptrs[fd] != NULL) continue;
+
+        curproc->ofptrs[fd] = kmalloc(sizeof(struct fd));
+
+        res = vfs_open(filename, flags, mode, &curproc->ofptrs[fd]->vptr);
+        if (res) {
+            kfree(curproc->ofptrs[fd]);
+            return res;
+        }
+        break;
+    }
+
+    if (fd < OPEN_MAX + 1) return fd;
+
+    return EMFILE;
+}
+
+int sys_close(int fd) {
+    vfs_close(curproc->ofptrs[fd]->vnode);
+    kfree(curproc->ofptrs[fd]);
+    return 0;
 }

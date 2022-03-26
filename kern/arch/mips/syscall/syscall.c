@@ -99,6 +99,7 @@ syscall(struct trapframe *tf)
 	 */
 
 	retval = 0;
+	err = 0;
 
 	switch (callno) {
 	    case SYS_reboot:
@@ -116,9 +117,13 @@ syscall(struct trapframe *tf)
                 panic("Can't continue further until sys_exit() is implemented");
 
 	    /* Add stuff here */
-		case SYS_open: //  = 45
-		retval = sys_open((userptr_t)tf->tf_a0, (int)tf->tf_a1, 
-				 (mode_t)tf->tf_a2);
+		case SYS_open: // = 45
+		retval = sys_open((const_userptr_t)tf->tf_a0, (int)tf->tf_a1,
+					(mode_t)tf->tf_a2);
+		break;
+
+		case SYS_close: // = 49
+		retval = sys_close((int)tf->tf_a0);
 		break;
 
 	    default:
