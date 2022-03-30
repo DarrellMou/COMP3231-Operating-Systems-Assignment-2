@@ -26,7 +26,6 @@ struct open_file {
 	off_t offset;
 	int flags;
 	uint32_t refcount;
-	struct lock *file_lock;
 };
 
 // Open file table
