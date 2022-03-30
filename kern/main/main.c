@@ -140,6 +140,12 @@ boot(void)
 	 */
 	COMPILE_ASSERT(sizeof(userptr_t) == sizeof(char *));
 	COMPILE_ASSERT(sizeof(*(userptr_t)0) == sizeof(char));
+
+	OF_table = NULL;
+	int result = init_OF_table();
+	if (result) {
+		panic("Open file table init failed");
+	}
 }
 
 /*

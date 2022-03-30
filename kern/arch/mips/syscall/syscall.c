@@ -118,19 +118,19 @@ syscall(struct trapframe *tf)
 
 	    /* Add stuff here */
 		case SYS_open:  // = 45
-		retval = sys_open((userptr_t)tf->tf_a0, (int)tf->tf_a1,
+		err = sys_open((userptr_t)tf->tf_a0, (int)tf->tf_a1,
 					(mode_t)tf->tf_a2, &retval);
 		break;
 
-		// case SYS_read:  // = 50
-		// retval = sys_read((int)tf->tf_a0, (void *)tf->tf_a1,
-		// 			(size_t)tf->tf_a2);
-		// break
+		case SYS_read:  // = 50
+		err = sys_read((int)tf->tf_a0, (userptr_t)tf->tf_a1,
+					(size_t)tf->tf_a2, &retval);
+		break;
 
-		// case SYS_write: // = 55
-		// retval = sys_write((int)tf->tf_a0, (void *)tf->tf_a1, 
-		// 			(size_t)tf->tf_a2);
-		// break
+		case SYS_write: // = 55
+		err = sys_write((int)tf->tf_a0, (userptr_t)tf->tf_a1, 
+					(size_t)tf->tf_a2, &retval);
+		break;
 
 		// case SYS_lseek: // = 59
 		// uint64_t offset;

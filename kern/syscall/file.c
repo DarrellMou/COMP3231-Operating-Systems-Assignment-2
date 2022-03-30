@@ -145,12 +145,12 @@ int file_open(char *filename, int flags, mode_t mode, int *retval) {
 	OF_entry->flags = flags;
 	OF_entry->offset = 0;
 
-	if(flags & O_APPEND) {
+	if (flags & O_APPEND) {
         struct stat inode;
-        int v;
-        v = VOP_STAT(OF_entry->vptr, &inode);
-        if(v) {
-            return v;
+        int result;
+        result = VOP_STAT(OF_entry->vptr, &inode);
+        if (result) {
+            return result;
         }
 		OF_entry->offset = inode.st_size;
 	}
@@ -175,13 +175,77 @@ int sys_open(userptr_t filenameoff_t, int flags, mode_t mode, int *retval) {
     return file_open(filename, flags, mode, retval);
 }
 
-// ssize_t sys_read(int fd, void *buf, size_t buflen, int *retval) {
+ssize_t sys_read(int FD, void *buf, size_t buflen, int *retval) {
+    return file_rw(FD, buf, buflen, UIO_READ, retval);
+}
 
-// }
+ssize_t sys_write(int FD, void *buf, size_t nBytes, int *retval) {
+    return file_rw(FD, buf, nBytes, UIO_WRITE, retval);
+}
 
-// ssize_t sys_write(int fd, const void *buf, size_t nBytes, int *retval) {
+int file_rw(int FD, void *buf, size_t nbytes, mode_t mode, int *retval) {
+    lock_acquire(OF_table->OF_table_lock);
+    int OFT_key = valid_FD(FD);
+    if (OFT_key < 0) {
+        lock_release(OF_table->OF_table_lock);
+        return EBADF;
+    }
+    struct open_file *OF = OF_table->OFs[OFT_key];
 
-// }
+    if (mode == UIO_WRITE) {
+        switch (OF->flags & O_ACCMODE) {
+            case O_WRONLY:
+                break;
+            case O_RDWR:
+                break;
+            default:
+                lock_release(OF_table->OF_table_lock);
+                return EBADF;
+        }
+    }
+
+    if (mode == UIO_READ) {
+        switch (OF->flags & O_ACCMODE) {
+            case O_RDONLY:
+                break;
+            case O_RDWR:
+                break;
+            default:
+                lock_release(OF_table->OF_table_lock);
+                return EBADF;
+        }
+    }
+
+    int is_seekable = VOP_ISSEEKABLE(OF->vptr);
+    off_t offset = 0;
+    if (is_seekable) {
+        offset = OF->offset;
+    }
+
+    struct iovec iov;
+    struct uio ku;
+    uio_kinit(&iov, &ku, buf, nbytes, offset, mode);
+
+    int result;
+    struct vnode *vn = OF->vptr;
+    if (mode == UIO_WRITE) {
+        result = VOP_WRITE(vn, &ku);
+    } else {
+        result = VOP_READ(vn, &ku);
+    }
+
+    if (result) {
+        lock_release(OF_table->OF_table_lock);
+        return result;
+    }
+
+    OF->offset = ku.uio_offset;
+    lock_release(OF_table->OF_table_lock);
+
+    *retval = nbytes - ku.uio_resid;
+
+    return 0;
+}
 
 // off_t sys_lseek(int fd, off_t pos, int whence, int *retval) {
 

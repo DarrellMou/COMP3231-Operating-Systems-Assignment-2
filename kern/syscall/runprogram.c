@@ -44,6 +44,7 @@
 #include <vfs.h>
 #include <syscall.h>
 #include <test.h>
+#include <file.h>
 
 /*
  * Load program "progname" and start running it in usermode.
@@ -94,6 +95,11 @@ runprogram(char *progname)
 	result = as_define_stack(as, &stackptr);
 	if (result) {
 		/* p_addrspace will go away when curproc is destroyed */
+		return result;
+	}
+
+	result = init_FD_table();
+	if (result) {
 		return result;
 	}
 
