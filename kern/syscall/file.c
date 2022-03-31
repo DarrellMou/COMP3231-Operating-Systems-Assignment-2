@@ -183,9 +183,54 @@ int sys_open(userptr_t filenameoff_t, int flags, mode_t mode, int *retval) {
 
 // }
 
-// off_t sys_lseek(int fd, off_t pos, int whence, int *retval) {
+off_t sys_lseek(int fd, off_t pos, int whence, off_t *retval) {
+	int OF_key = valid_FD(fd);
+	off_t new_pos = -1;
+	if (OF_key < 0) {
+		return EBADF;
+	}
 
-// }
+	lock_acquire(OF_table->OF_table_lock);
+	// free later
+	struct open_file *OF_entry = OF_table->OFs[OF_key];
+
+	if (!VOP_ISSEEKABLE(OF_entry->vptr)) {
+		lock_release(OF_table->OF_table_lock);
+		return ESPIPE; // does not support seeking
+	}
+
+	if (whence == SEEK_SET) {
+		if (pos < 0) return EINVAL; // pos less than 0
+		new_pos = pos;
+		OF_entry->offset = new_pos;
+	}
+
+	else if (whence == SEEK_CUR) {
+		new_pos = OF_entry->offset + pos;
+		if (new_pos < 0) return EINVAL; // new_pos less than 0
+		OF_entry->offset = new_pos;
+	}
+
+	else if (whence == SEEK_END) {
+		struct stat inode;
+        int v;
+        v = VOP_STAT(OF_entry->vptr, &inode);
+        if(v) {
+            return v;
+        }
+		new_pos = pos + inode.st_size; // can seek beyond EOF
+		OF_entry->offset = new_pos;
+	}
+
+	else {
+		lock_release(OF_table->OF_table_lock);
+		return EINVAL; // whence is invalid
+	}
+
+	lock_release(OF_table->OF_table_lock);
+	*retval = new_pos;
+	return new_pos;
+}
 
 int sys_close(int FD) {
 
@@ -209,6 +254,61 @@ int sys_close(int FD) {
     return 0;
 }
 
-// int sys_dup2(int oldfd, int newfd, int *retval) {
+int sys_dup2(int oldfd, int newfd, int *retval) {
+	//int result;
+	int FD = -1;
+	int OF = -1;
+	
+	// free later
+	struct file_descriptor_table *FD_table = curproc->FD_table;
+	lock_acquire(OF_table->OF_table_lock);
+	int old_OF_key = valid_FD(oldfd);
+	int new_OF_key = valid_FD(newfd);
 
-// }
+	// check not a valid handle file
+	if (old_OF_key < 0) {
+		return EBADF;
+	}
+
+	if (newfd < 0 || newfd >= OPEN_MAX) {
+		return EBADF;
+	}
+
+	// clone on to itself(no effect)
+	if (oldfd == newfd) {
+		return oldfd;
+	}
+
+	// Check EMFILE and ENFILE
+	for (int i = 0; i < OPEN_MAX; i++) {
+		if (FD_table->FDs[i] == CLOSED_FILE) {
+			FD = i;
+			break;
+		}
+	}
+
+	for (int i = 0; i < OPEN_MAX; i++) {
+		if (OF_table->OFs[i] == NULL) {
+			OF = i;
+			break;
+		}
+	}
+
+	if (FD == -1 || OF == -1) {
+		lock_release(OF_table->OF_table_lock);
+		if (FD == -1) return EMFILE; // too many opened file in the process
+		if (OF == -1) return ENFILE; // too many opened file in entire system
+	}
+	
+	// if newfd is open, closed it
+	if (new_OF_key != -1) {
+		sys_close(newfd);
+	}
+	// points newfd to the same key
+	FD_table->FDs[newfd] = old_OF_key;
+	lock_release(OF_table->OF_table_lock);
+	*retval = newfd;
+
+	return newfd;
+
+}

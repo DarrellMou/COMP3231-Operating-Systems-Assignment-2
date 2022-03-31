@@ -36,6 +36,8 @@
 #include <current.h>
 #include <syscall.h>
 #include <file.h>
+#include <endian.h>
+#include <copyinout.h>
 
 
 /*
@@ -82,6 +84,10 @@ syscall(struct trapframe *tf)
 	int callno;
 	int32_t retval;
 	int err;
+
+	uint64_t offset;
+	int whence;
+	off_t retval64;
 
 	KASSERT(curthread != NULL);
 	KASSERT(curthread->t_curspl == 0);
@@ -132,24 +138,21 @@ syscall(struct trapframe *tf)
 		// 			(size_t)tf->tf_a2);
 		// break
 
-		// case SYS_lseek: // = 59
-		// uint64_t offset;
-		// int whence;
-		// off_t retval64;
+		case SYS_lseek: // = 59
 
-		// join32to64(tf->tf_a2, tf->tf_a3, &offset);
-		// copyin((userptr_t)tf->tf_sp + 16, &whence, sizeof(int));
-		// split64to32(retval64, &tf->tf_v0, &tf->tf_v1);
-		// retval = sys_lseek((int)tf->tf_a0, (off_t)offset, whence);
-		// break
+		join32to64(tf->tf_a2, tf->tf_a3, &offset);
+		copyin((userptr_t)tf->tf_sp + 16, &whence, sizeof(int));
+		retval64 = sys_lseek((int)tf->tf_a0, (off_t)offset, whence, &retval64);
+		split64to32(retval64, &tf->tf_v0, &tf->tf_v1);
+		break;
 
 		case SYS_close: // = 49
 		retval = sys_close((int)tf->tf_a0);
 		break;
 
-		// case SYS_dup2:  // = 48
-		// retval = sys_dup2((int)tf->tf_a0, (int)tf->tf_a1);
-		// break
+		case SYS_dup2:  // = 48
+		retval = sys_dup2((int)tf->tf_a0, (int)tf->tf_a1, &retval);
+		break;
 
 	    default:
 		kprintf("Unknown syscall %d\n", callno);
