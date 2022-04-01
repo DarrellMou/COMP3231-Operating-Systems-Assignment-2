@@ -255,7 +255,7 @@ off_t sys_lseek(int fd, off_t pos, int whence, off_t *retval) {
 	}
 
 	lock_acquire(OF_table->OF_table_lock);
-	// free later
+
 	struct open_file *OF_entry = OF_table->OFs[OF_key];
 
 	if (!VOP_ISSEEKABLE(OF_entry->vptr)) {
@@ -279,7 +279,7 @@ off_t sys_lseek(int fd, off_t pos, int whence, off_t *retval) {
 		struct stat inode;
         int v;
         v = VOP_STAT(OF_entry->vptr, &inode);
-        if(v) {
+        if (v) {
             return v;
         }
 		new_pos = pos + inode.st_size; // can seek beyond EOF
@@ -319,11 +319,9 @@ int sys_close(int FD) {
 }
 
 int sys_dup2(int oldfd, int newfd, int *retval) {
-	//int result;
 	int FD = -1;
 	int OF = -1;
 	
-	// free later
 	struct file_descriptor_table *FD_table = curproc->FD_table;
 	lock_acquire(OF_table->OF_table_lock);
 	int old_OF_key = valid_FD(oldfd);

@@ -1,1 +1,35 @@
-Add your design document in here.
+You must submit a small design document identifying the basic issues in this assignment and describes your solution to the problems you have identified. 
+The design document could be based on what developed in the planning phase. The document must be plain ASCII text.
+
+What significant data structures have you added and what function do they perform?
+What are any significant issues surround managing the data structures and state do they contain?
+What data structures are per-process and what structures are shared between processes?
+What is the main issues related to transferring data to and from applications?
+If fork() was implemented, what concurrency issues would be introduced to your implementation?
+
+
+There are three data structures that we've added, which include file descriptor table, open file table, and open file entry. All the data structures
+are declared in file.h. File descriptor table is served as a link to the open file table and the open file table contains the open file entries that contains 
+information about the open file. The link between the FD table and the OF table is the array inside the file descriptor table struct. By using an integer fd as the index we
+can get the open file key from the array, which will later be use as an index to get the open file entry from the OF table. The lock variable inside the OF table struct
+is to ensure that open file table can only be access on process at a time.
+
+The significant issues on managing the data structures about the allocating of memory spaces, because the memory in the system is scarce, we have to ensure that the data does not exceed
+that limit that could affect the operating system. For example, to ensure that the open file does not exceed the max open file per process, we set the
+limit of the OF table array to __OPEN_MAX(128).
+
+The data structure that are per-process is the FD table and the OF table are shared across all processors. To make the OF table accessible by all processors,
+we declared it as a global pointer to the open file table array. We also include the FD table in the struct proc(proc.h) to make a per-process FD table.
+
+The main issue of transferring data is making sure that the correct variable type is sent to the syscall functions. If the variable type of value is not valid, it could cause
+unexpected error in the operating system if the error is not handled properly in the syscall function. We also need to ensure that the pointers variable that we sent as an argument 
+is a correct value to get the expected behavior from the system.
+
+If fork() is implemented the concurrency issues that we would encounter is a race condition, which happens when two or more process accessing the same data at the same time.
+In this case it would be the OF table array, since it's a shared resource across all processors. To fix this issue we can simply build a lock variable to ensure that the OF table can
+only be access one process at a time. The lock variable that is inside the OF table struct is used to prevent the concurrency issue.
+
+
+
+
+
