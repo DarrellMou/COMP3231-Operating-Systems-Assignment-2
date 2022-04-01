@@ -293,7 +293,7 @@ off_t sys_lseek(int fd, off_t pos, int whence, off_t *retval) {
 
 	lock_release(OF_table->OF_table_lock);
 	*retval = new_pos;
-	return new_pos;
+	return 0;
 }
 
 int sys_close(int FD) {
@@ -378,6 +378,6 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
 	lock_release(OF_table->OF_table_lock);
 	*retval = newfd;
 
-	return newfd;
+	return 0;
 
 }

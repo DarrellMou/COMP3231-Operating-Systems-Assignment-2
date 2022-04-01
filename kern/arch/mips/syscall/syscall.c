@@ -87,7 +87,7 @@ syscall(struct trapframe *tf)
 
 	uint64_t offset;
 	int whence;
-	off_t retval64;
+	off_t retval64 = -1;
 
 	KASSERT(curthread != NULL);
 	KASSERT(curthread->t_curspl == 0);
@@ -142,8 +142,7 @@ syscall(struct trapframe *tf)
 
 		join32to64(tf->tf_a2, tf->tf_a3, &offset);
 		copyin((userptr_t)tf->tf_sp + 16, &whence, sizeof(int));
-		retval64 = sys_lseek((int)tf->tf_a0, (off_t)offset, whence, &retval64);
-		split64to32(retval64, &tf->tf_v0, &tf->tf_v1);
+		err = sys_lseek((int)tf->tf_a0, (off_t)offset, whence, &retval64);
 		break;
 
 		case SYS_close: // = 49
@@ -151,7 +150,7 @@ syscall(struct trapframe *tf)
 		break;
 
 		case SYS_dup2:  // = 48
-		retval = sys_dup2((int)tf->tf_a0, (int)tf->tf_a1, &retval);
+		err = sys_dup2((int)tf->tf_a0, (int)tf->tf_a1, &retval);
 		break;
 
 	    default:
@@ -173,6 +172,9 @@ syscall(struct trapframe *tf)
 	else {
 		/* Success. */
 		tf->tf_v0 = retval;
+		if (retval64 >= 0) {
+			split64to32(retval64, &tf->tf_v0, &tf->tf_v1);
+		}
 		tf->tf_a3 = 0;      /* signal no error */
 	}
 
