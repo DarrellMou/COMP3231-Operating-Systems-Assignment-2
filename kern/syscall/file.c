@@ -367,7 +367,9 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
 		sys_close(newfd);
 	}
 	// points newfd to the same key
+	struct open_file *OF_ent = OF_table->OFs[old_OF_key];
 	FD_table->FDs[newfd] = old_OF_key;
+	OF_ent->refcount++;
 	lock_release(OF_table->OF_table_lock);
 	*retval = newfd;
 
