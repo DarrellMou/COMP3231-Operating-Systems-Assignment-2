@@ -363,8 +363,13 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
 	}
 	
 	// if newfd is open, closed it
-	if (new_OF_key != -1) {
-		sys_close(newfd);
+	if (OF_table->OFs[new_OF_key] != NULL) {
+		int check = sys_close(newfd);
+		// if there's an error
+		if (check) {
+			lock_release(OF_table->OF_table_lock);
+			return check;
+		}
 	}
 	// points newfd to the same key
 	struct open_file *OF_ent = OF_table->OFs[old_OF_key];
