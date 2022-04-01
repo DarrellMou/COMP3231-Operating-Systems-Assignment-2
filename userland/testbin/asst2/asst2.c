@@ -14,7 +14,7 @@ char buf[MAX_BUF];
 int
 main(int argc, char * argv[])
 {
-        int fd, r, i, j , k;
+        int fd, r, i, j , k, newfd;
         (void) argc;
         (void) argv;
 
@@ -121,6 +121,22 @@ main(int argc, char * argv[])
         printf("* file lseek  okay\n");
         printf("* closing file\n");
         close(fd);
+
+
+        printf("**********\n* test dup2\n");
+        fd = open("test.file", O_RDONLY);
+        printf("* open() got fd %d\n", fd);
+        if (fd < 0) {
+                printf("ERROR opening file: %s\n", strerror(errno));
+                exit(1);
+        }
+
+        printf("* duplicating a file\n");
+        newfd = dup2(5, 3);
+
+        printf("* duplicating complete\n");
+        printf("%d\n", newfd);
+        
 
         return 0;
 }
