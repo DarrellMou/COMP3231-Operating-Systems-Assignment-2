@@ -264,14 +264,20 @@ off_t sys_lseek(int fd, off_t pos, int whence, off_t *retval) {
 	}
 
 	if (whence == SEEK_SET) {
-		if (pos < 0) return EINVAL; // pos less than 0
+		if (pos < 0) {
+			lock_release(OF_table->OF_table_lock);
+			return EINVAL; // pos less than 0
+		}
 		new_pos = pos;
 		OF_entry->offset = new_pos;
 	}
 
 	else if (whence == SEEK_CUR) {
 		new_pos = OF_entry->offset + pos;
-		if (new_pos < 0) return EINVAL; // new_pos less than 0
+		if (new_pos < 0) {
+			lock_release(OF_table->OF_table_lock);
+			return EINVAL; // new_pos less than 0
+		}
 		OF_entry->offset = new_pos;
 	}
 
@@ -280,6 +286,7 @@ off_t sys_lseek(int fd, off_t pos, int whence, off_t *retval) {
         int v;
         v = VOP_STAT(OF_entry->vptr, &inode);
         if (v) {
+			lock_release(OF_table->OF_table_lock);
             return v;
         }
 		new_pos = pos + inode.st_size; // can seek beyond EOF
@@ -326,19 +333,21 @@ int sys_dup2(int oldfd, int newfd, int *retval) {
 	lock_acquire(OF_table->OF_table_lock);
 	int old_OF_key = valid_FD(oldfd);
 	int new_OF_key = valid_FD(newfd);
-
 	// check not a valid handle file
 	if (old_OF_key < 0) {
+		lock_release(OF_table->OF_table_lock);
 		return EBADF;
 	}
 
 	if (newfd < 0 || newfd >= OPEN_MAX) {
+		lock_release(OF_table->OF_table_lock);
 		return EBADF;
 	}
 
 	// clone on to itself(no effect)
 	if (oldfd == newfd) {
-		return oldfd;
+		lock_release(OF_table->OF_table_lock);
+		return EBADF;
 	}
 
 	// Check EMFILE and ENFILE
